@@ -39,7 +39,7 @@ Token URL: https://_your-domain-name_/token/
 }
 ```
 
-* Create file _devicename_.json in __devices__ directory and write json config for device using Google guides: https://developers.google.com/assistant/smarthome/concepts/devices-traits
+* Create file _device-name_.json in __devices__ directory and write json config for device using Google guides: https://developers.google.com/assistant/smarthome/concepts/devices-traits
 
 Example for simple on-off device:
 ```json
