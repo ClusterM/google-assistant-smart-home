@@ -9,7 +9,7 @@ Simple Python framework to control your DIY smart home devices using Google Assi
 
 ## How to install
 * Checkout project somewhere on your server
-* Edit __alice.wsgi__ and change path to project directory
+* Edit __google_home.wsgi__ and change path to project directory
 * Deploy project to your web server using WSGI, don't forget to allow authorization header
 * Go to https://console.actions.google.com/ and create new project, select "smart home" type
 * Open "Develop"->"Invocation" and type name of your project
