@@ -1,0 +1,25 @@
+{
+    "type": "action.devices.types.SWITCH",
+    "traits": [
+        "action.devices.traits.OnOff"
+    ],
+    "name": {
+        "name": "PC",
+        "defaultNames": [
+          "PC",
+          "Computer"
+        ],
+        "nicknames": [
+          "PC",
+          "Computer"
+        ]
+    },
+    "willReportState": false,
+    "roomHint": "My room",
+    "deviceInfo": {
+        "manufacturer": "Cluster",
+        "model": "1",
+        "hwVersion": "1",
+        "swVersion": "1"
+    }
+}

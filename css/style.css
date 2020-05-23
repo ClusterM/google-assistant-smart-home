@@ -1,0 +1,12 @@
+body {
+    background-color: #333333;
+    color: #FFFFFF;
+}
+
+input {
+    height: 1.5em; font-size: 1em;
+}
+
+.error {
+    color: red;
+}

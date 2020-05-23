@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta id="viewport" name="viewport" content="width=device-width, initial-scale=1" />
+<title>Умный дом Кластера</title>        
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<form method="POST">
+{% if login_failed %}
+    <div class="error">Неправильное имя и/или пароль</div><br/>
+{% endif %}
+    Логин:<br/>
+    <input type="text" name="username" size="20" /><br/>
+    Пароль:<br/>
+    <input type="password" name="password" size="20" /><br/><br/>
+    <input type="submit" name="login" value="Войти">
+</form>
+</body>
+</html>
