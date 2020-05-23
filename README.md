@@ -95,4 +95,4 @@ Query fuction must return device status object, and action function must return 
 
 * Open Google Home app on your phone and link it with your project
 * Done! You can control your devices using voice commands or Google Home app
-* Run __sync__.py script when you need to update devices list
+* Run __sync.py__ script when you need to update devices list
