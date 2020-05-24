@@ -17,6 +17,8 @@ from time import time
 import importlib
 import logging
 
+# Enable log if need
+
 if hasattr(config, 'LOG_FILE'):
     logging.basicConfig(level=config.LOG_LEVEL,
                     format=config.LOG_FORMAT,
@@ -25,6 +27,7 @@ if hasattr(config, 'LOG_FILE'):
                     filemode='a')
 logger = logging.getLogger()
 
+# Path to device plugins
 sys.path.insert(0, config.DEVICES_DIRECTORY)
 
 last_code = None
@@ -35,6 +38,7 @@ app = Flask(__name__)
 
 logger.info("Started.", extra={'remote_addr': '-', 'user': '-'})
 
+# Function to load user info
 def get_user(username):
     filename = os.path.join(config.USERS_DIRECTORY, username + ".json")
     if os.path.isfile(filename) and os.access(filename, os.R_OK):
@@ -46,6 +50,7 @@ def get_user(username):
         logger.warning("user not found", extra={'remote_addr': request.remote_addr, 'user': username})
         return None
 
+# Function to retrieve token from header
 def get_token():
     auth = request.headers.get('Authorization')
     parts = auth.split(' ', 2)
@@ -55,6 +60,7 @@ def get_token():
         logger.warning("invalid token: %s", auth, extra={'remote_addr': request.remote_addr, 'user': '-'})
         return None
 
+# Function to check current token, returns username
 def check_token():
     access_token = get_token()
     access_token_file = os.path.join(config.TOKENS_DIRECTORY, access_token)
@@ -64,6 +70,7 @@ def check_token():
     else:
         return None
 
+# Function to load device info
 def get_device(device_id):
     filename = os.path.join(config.DEVICES_DIRECTORY, device_id + ".json")
     if os.path.isfile(filename) and os.access(filename, os.R_OK):
@@ -75,6 +82,7 @@ def get_device(device_id):
     else:
         return None
 
+# Random string generator
 def random_string(stringLength=8):
     chars = string.ascii_letters + string.digits
     return ''.join(random.choice(chars) for i in range(stringLength))
@@ -83,10 +91,12 @@ def random_string(stringLength=8):
 def send_css(path):
     return send_from_directory('css', path)
 
+# OAuth entry point
 @app.route('/auth/', methods=['GET', 'POST'])
 def auth():
     global last_code, last_code_user, last_code_time
     if request.method == 'GET':
+        # Ask user for login and password
         return render_template('login.html')
     elif request.method == 'POST':
         if ("username" not in request.form
@@ -98,11 +108,13 @@ def auth():
             or request.args["client_id"] != config.CLIENT_ID):
                 logger.warning("invalid auth request", extra={'remote_addr': request.remote_addr, 'user': request.form['username']})
                 return "Invalid request", 400
+        # Check login and password
         user = get_user(request.form["username"])
         if user == None or user["password"] != request.form["password"]:
             logger.warning("invalid password", extra={'remote_addr': request.remote_addr, 'user': request.form['username']})
             return render_template('login.html', login_failed=True)
 
+        # Generate random code and remember this user and time
         last_code = random_string(8)
         last_code_user = request.form["username"]
         last_code_time = time()
@@ -113,6 +125,7 @@ def auth():
         logger.info("generated code", extra={'remote_addr': request.remote_addr, 'user': request.form['username']})
         return redirect(request.args["redirect_uri"] + '?' + urllib.parse.urlencode(params))
 
+# OAuth, token request
 @app.route('/token/', methods=['POST'])
 def token():
     global last_code, last_code_user, last_code_time
@@ -123,23 +136,30 @@ def token():
         or "code" not in request.form):
             logger.warning("invalid token request", extra={'remote_addr': request.remote_addr, 'user': last_code_user})
             return "Invalid request", 400
+    # Check code
     if request.form["code"] != last_code:
         logger.warning("invalid code", extra={'remote_addr': request.remote_addr, 'user': last_code_user})
         return "Invalid code", 403
+    # Check time
     if  time() - last_code_time > 10:
         logger.warning("code is too old", extra={'remote_addr': request.remote_addr, 'user': last_code_user})
         return "Code is too old", 403
+    # Generate and save random token with username
     access_token = random_string(32)
     access_token_file = os.path.join(config.TOKENS_DIRECTORY, access_token)
     with open(access_token_file, mode='wb') as f:
         f.write(last_code_user.encode('utf-8'))
     logger.info("access granted", extra={'remote_addr': request.remote_addr, 'user': last_code_user})
+    # Return just token without any expiration time
     return {'access_token': access_token}
 
+# Main URL to interact with Google requests
 @app.route('/', methods=['GET', 'POST'])
 def fulfillment():
+    # Google will send POST requests only, some it's just placeholder for GET
     if request.method == 'GET': return "Your smart home is ready."
 
+    # Check token and get username
     user_id = check_token()
     if user_id == None:
         return "Access denied", 403
@@ -149,30 +169,35 @@ def fulfillment():
     result = {}
     result['requestId'] = r['requestId']
 
+    # Let's check inputs array. Why it's array? Is it possible that it will contain multiple objects? I don't know.
     inputs = r['inputs']
     for i in inputs:
         intent = i['intent']
+        # Sync intent, need to response with devices list
         if intent == "action.devices.SYNC":
             result['payload'] = {"agentUserId": user_id, "devices": []}
+            # Loading user info
             user = get_user(user_id)
+            # Loading each device available for this user
             for device_id in user['devices']:
+                # Loading device info
                 device = get_device(device_id)
                 result['payload']['devices'].append(device)
 
+        # Query intent, need to response with current device status
         if intent == "action.devices.QUERY":
             result['payload'] = {}
             result['payload']['devices'] = {}
             for device in i['payload']['devices']:
                 device_id = device['id']
-                if "customData" in device:
-                    custom_data = device['customData']
-                else:
-                    custom_data = None
-                device_info = get_device(device_id)
+                custom_data = device.get("customData", None)
+                # Load module for this device
                 device_module = importlib.import_module(device_id)
+                # Call query method for this device
                 query_method = getattr(device_module, device_id + "_query")
                 result['payload']['devices'][device_id] = query_method(custom_data)
 
+        # Execute intent, need to execute some action
         if intent == "action.devices.EXECUTE":
             result['payload'] = {}
             result['payload']['commands'] = []
@@ -180,8 +205,9 @@ def fulfillment():
                 for device in command['devices']:
                     device_id = device['id']
                     custom_data = device.get("customData", None)
-                    device_info = get_device(device_id)
+                    # Load module for this device
                     device_module = importlib.import_module(device_id)
+                    # Call execute method for this device for every execute command
                     action_method = getattr(device_module, device_id + "_action")
                     for e in command['execution']:
                         command = e['command']
@@ -189,7 +215,8 @@ def fulfillment():
                         action_result = action_method(custom_data, command, params)
                         action_result['ids'] = [device_id]
                         result['payload']['commands'].append(action_result)
-            
+        
+        # Disconnect intent, need to revoke token
         if intent == "action.devices.DISCONNECT":
             access_token = get_token()
             access_token_file = os.path.join(config.TOKENS_DIRECTORY, access_token)
