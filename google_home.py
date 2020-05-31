@@ -6,6 +6,7 @@ from flask import request
 from flask import render_template
 from flask import send_from_directory
 from flask import redirect
+from flask import jsonify
 import sys
 import os
 import requests
@@ -151,7 +152,7 @@ def token():
         f.write(last_code_user.encode('utf-8'))
     logger.info("access granted", extra={'remote_addr': request.remote_addr, 'user': last_code_user})
     # Return just token without any expiration time
-    return {'access_token': access_token}
+    return jsonify({'access_token': access_token})
 
 # Main URL to interact with Google requests
 @app.route('/', methods=['GET', 'POST'])
@@ -226,4 +227,4 @@ def fulfillment():
             return {}    
 
     logger.debug("response: \r\n%s", json.dumps(result, indent=4), extra={'remote_addr': request.remote_addr, 'user': user_id})
-    return result
+    return jsonify(result)
