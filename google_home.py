@@ -211,9 +211,9 @@ def fulfillment():
                     # Call execute method for this device for every execute command
                     action_method = getattr(device_module, device_id + "_action")
                     for e in command['execution']:
-                        command = e['command']
+                        comm = e['command']
                         params = e.get("params", None)
-                        action_result = action_method(custom_data, command, params)
+                        action_result = action_method(custom_data, comm, params)
                         action_result['ids'] = [device_id]
                         result['payload']['commands'].append(action_result)
         
