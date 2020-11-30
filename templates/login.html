@@ -2,17 +2,17 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <meta id="viewport" name="viewport" content="width=device-width, initial-scale=1" />
-<title>Умный дом Кластера</title>        
+<title>Google Smart Home</title>        
 <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
 <form method="POST">
 {% if login_failed %}
-    <div class="error">Неправильное имя и/или пароль</div><br/>
+    <div class="error">Invalid username or password</div><br/>
 {% endif %}
-    Логин:<br/>
+    Username:<br/>
     <input type="text" name="username" size="20" /><br/>
-    Пароль:<br/>
+    Password:<br/>
     <input type="password" name="password" size="20" /><br/><br/>
     <input type="submit" name="login" value="Войти">
 </form>
